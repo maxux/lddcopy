@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 if [ -z "$2" ]; then
     echo "Usage: $0 <binary> <root target>"
@@ -61,6 +62,11 @@ ensure_libs() {
     # Copying resolv libraries
     resolv_libs
 
+    libs=$(ldd $sourcebin 2>&1 | grep '=>' | grep 'not found' | awk '{ print $1 }' || true)
+    for lib in $libs; do
+        echo "[-] warning: $lib: not found"
+    done
+
     # Looking for dynamic libraries shared
     libs=$(ldd $sourcebin 2>&1 | grep '=>' | grep -v '=>  (' | awk '{ print $3 }' || true)
 
@@ -70,6 +76,10 @@ ensure_libs() {
 
         # Library found and not the already installed one
         if [ -e lib/$libname ] || [ "$lib" == "${PWD}/lib/$libname" ]; then
+            continue
+        fi
+
+        if [ "$libname" == "not" ]; then
             continue
         fi
 
